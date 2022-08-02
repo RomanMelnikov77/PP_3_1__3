@@ -2,73 +2,60 @@ package ru.kata.spring.boot_security.demo.model;
 
 import org.springframework.security.core.GrantedAuthority;
 import javax.persistence.*;
-import java.util.List;
-import java.util.Objects;
+import java.util.Set;
 
 @Entity
 @Table(name = "roles")
 public class Role implements GrantedAuthority {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "role_id")
-    private int id;
+    @Column(name = "id")
+    private Long id;
 
-    private String name;
+    @Column(name = "role", unique = true)
+    private String userRole;
+
     @ManyToMany(mappedBy = "roles")
-    private List<User> users;
-
-    @Override
-    public String getAuthority() {
-        return name;
-    }
+    private Set<User> users;
 
     public Role() {
     }
 
-    public Role(String name, List<User> users) {
-        this.name = name;
-        this.users = users;
+    public Role(String userRole) {
+        this.userRole = userRole;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getUserRole() {
+        return userRole;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUserRole(String role) {
+        this.userRole = role;
     }
 
-    public List<User> getUsers() {
+    public Set<User> getUsers() {
         return users;
     }
 
-    public void setUsers(List<User> users) {
+    public void setUsers(Set<User> users) {
         this.users = users;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Role role = (Role) o;
-        return id == role.id && name.equals(role.name) && users.equals(role.users);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, name, users);
+    public String getAuthority() {
+        return userRole;
     }
 
     @Override
     public String toString() {
-        return name;
+        return userRole;
     }
 }

@@ -10,42 +10,28 @@ import java.util.Optional;
 
 @Repository
 public class RoleDaoImpl implements RoleDao {
+
     @PersistenceContext
     private EntityManager entityManager;
 
     @Override
+    public List<Role> getAllRoles() {
+        return entityManager.createQuery("select r from Role r", Role.class).getResultList();
+    }
+
+    @Override
+    public Role getRole(String userRole) {
+        return entityManager.createQuery("select r from Role r where r.userRole =: userRole", Role.class)
+                .setParameter("userRole", userRole).getSingleResult();
+    }
+
+    @Override
+    public Role getRoleById(Long id) {
+        return entityManager.find(Role.class, id);
+    }
+
+    @Override
     public void addRole(Role role) {
         entityManager.persist(role);
-    }
-
-    @Override
-    public void updateRole(Role role) {
-        entityManager.merge(role);
-    }
-
-    @Override
-    public void removeRole(int id) {
-        Query query = entityManager.createQuery("delete FROM Role where id = :id").setParameter("id", id);
-        query.executeUpdate();
-
-    }
-
-    @Override
-    public Optional<Role> getRoleById(int id) {
-        return Optional.of(entityManager.find(Role.class, id));
-    }
-
-    @Override
-    public List<Role> listRoles() {
-        return entityManager.createQuery("SELECT r FROM Role r", Role.class).getResultList();
-    }
-
-    @Override
-    public Optional<Role> findByRoleName(String roleName) {
-        Query query = entityManager.createQuery(" SELECT role from Role role where role.name = : name").setParameter("name", roleName);
-        List<Role> resultlist = query.getResultList();
-        Role role = resultlist.get(0);
-        Optional<Role> optUser = Optional.of(role);
-        return optUser;
     }
 }

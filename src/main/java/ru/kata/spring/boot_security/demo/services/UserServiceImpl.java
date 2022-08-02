@@ -1,14 +1,16 @@
 package ru.kata.spring.boot_security.demo.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.kata.spring.boot_security.demo.dao.UserDAOImpl;
+import ru.kata.spring.boot_security.demo.dao.UserDao;
 import ru.kata.spring.boot_security.demo.model.Role;
 import ru.kata.spring.boot_security.demo.model.User;
 import java.util.Collection;
@@ -17,62 +19,56 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class UserServiceImpl implements UserDetailsService {
-    private final UserDAOImpl userDAO;
+public class UserServiceImpl implements UserService, UserDetailsService {
+    private final UserDao userDao;
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImpl(UserDAOImpl userDAO) {
-        this.userDAO = userDAO;
-    }
-
-    @Transactional
-    public void addUser(User user) {
-        userDAO.addUser(user);
-    }
-
-    @Transactional
-    public void updateUser(User user) {
-        userDAO.addUser(user);
-    }
-
-    @Transactional
-    public void removeUser(int id) {
-        userDAO.removeUser(id);
-    }
-
-    public User getUserById(int id) {
-        Optional<User> opt = userDAO.getUserById(id);
-        if (opt.isEmpty()) {
-            return null;
-        } else {
-            return opt.get();
-        }
-
-    }
-
-    public List<User> listUsers() {
-        return userDAO.listUsers();
-    }
-
-
-    public Optional<User> findByUsername(String username) {
-        return userDAO.findByUsername(username);
+    @Lazy
+    public UserServiceImpl(UserDao userDao, PasswordEncoder passwordEncoder) {
+        this.userDao = userDao;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = findByUsername(username).get();
-        if (user == null) {
-            throw new UsernameNotFoundException(String.format("User '%s' not found", username));
+    public void saveUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userDao.saveUser(user);
+    }
+
+    @Override
+    @Transactional
+    public void updateUser(User user) {
+        if (!user.getPassword().equals(userDao.getUserById(user.getId()).getPassword())) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
         }
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
-                mapRolesToAuthorities(user.getRoles()));
+        userDao.updateUser(user);
     }
 
-    private Collection<? extends GrantedAuthority> mapRolesToAuthorities(Collection<Role> roles) {
-        return roles.stream().map(role -> new SimpleGrantedAuthority(role.getName())).collect(Collectors.toList());
+    @Override
+    @Transactional
+    public void deleteUser(long id) {
+        userDao.deleteUser(id);
     }
 
+    @Override
+    public List<User> getAllUsers() {
+        return userDao.getAllUsers();
+    }
 
+    @Override
+    public User getUserByLogin(String login) {
+        return userDao.getUserByLogin(login);
+    }
+
+    @Override
+    public User getUserById(long id) {
+        return userDao.getUserById(id);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
+        return userDao.getUserByLogin(login);
+    }
 }
